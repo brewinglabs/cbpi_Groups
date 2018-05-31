@@ -1,7 +1,10 @@
-from modules import cbpi
+from modules import cbpi,app
 from modules.core.props import Property
 from modules.core.hardware import ActorBase
 from modules.core.hardware import SensorPassive
+
+def intersect(a, b):
+	return list(set(a) & set(b))
 
 @cbpi.actor
 class ActorGroup(ActorBase):
@@ -22,20 +25,20 @@ class ActorGroup(ActorBase):
 		if isinstance(self.actor01, unicode) and self.actor01:
 			self.actors.append(int(self.actor01))
 		if isinstance(self.actor02, unicode) and self.actor02:
-			self.actors.append(int(self.actor02))			
+			self.actors.append(int(self.actor02))
 		if isinstance(self.actor03, unicode) and self.actor03:
 			self.actors.append(int(self.actor03))
 		if isinstance(self.actor04, unicode) and self.actor04:
 			self.actors.append(int(self.actor04))
 		if isinstance(self.actor05, unicode) and self.actor05:
-			self.actors.append(int(self.actor05))			
+			self.actors.append(int(self.actor05))
 		if isinstance(self.actor06, unicode) and self.actor06:
 			self.actors.append(int(self.actor06))
 		if isinstance(self.actor07, unicode) and self.actor07:
 			self.actors.append(int(self.actor07))
 		if isinstance(self.actor08, unicode) and self.actor08:
 			self.actors.append(int(self.actor08))
-			
+
 	def set_power(self, power):
 		for actor in self.actors:
 			self.api.actor_power(actor, power=power)
@@ -45,9 +48,19 @@ class ActorGroup(ActorBase):
 			self.api.switch_actor_on(actor, power=power)
 
 	def off(self):
+		turnedOnActors = []
+		for idx, value in cbpi.cache["actors"].iteritems():
+			if (value.type == "ActorGroup" and
+				idx != self.id and
+				value.state == 1):
+				actorsIds = map(int, value.config.values())
+				intersection = intersect(actorsIds, self.actors)
+				turnedOnActors.extend(intersection)
+
 		for actor in self.actors:
-			self.api.switch_actor_off(actor)
-			
+			if (actor not in turnedOnActors):
+				self.api.switch_actor_off(actor)
+
 @cbpi.sensor
 class SensorGroup(SensorPassive):
 
